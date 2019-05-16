@@ -2,7 +2,6 @@
 const fs = require('fs');
 const program = require('commander');
 const download = require('download-git-repo');
-const handlebars = require('handlebars');
 const inquirer = require('inquirer');
 const ora = require('ora');
 const chalk = require('chalk');
@@ -25,10 +24,11 @@ program.version('1.0.0', '-v, --version')
             ]).then((answers) => {
                 const spinner = ora('正在下载模板...');
                 spinner.start();
-                download('github.com:swraper/react_es6_dome', name, { clone: true }, (err) => {
+                const home = process.cwd();
+                download('swraper/react_es6_dome', `${home}/${name}`, (err) => {
                     if (err) {
                         spinner.fail();
-                        console.log(symbols.error, chalk.red(err));
+                        console.log(symbols.error, chalk.red(err),err);
                     } else {
                         spinner.succeed();
                         const fileName = `${name}/package.json`;
@@ -38,9 +38,12 @@ program.version('1.0.0', '-v, --version')
                             author: answers.author
                         }
                         if (fs.existsSync(fileName)) {
-                            const content = fs.readFileSync(fileName).toString();
-                            const result = handlebars.compile(content)(meta);
-                            fs.writeFileSync(fileName, result);
+                            const content = JSON.parse(fs.readFileSync(fileName).toString());
+                            content.name = name;
+                            content.description = answers.description || 'a project for react es6 dome';
+                            content.author = answers.author;
+
+                            fs.writeFileSync(fileName, JSON.stringify(content, null, 4),'utf8');
                         }
                         console.log(symbols.success, chalk.green('项目初始化完成'));
                     }
